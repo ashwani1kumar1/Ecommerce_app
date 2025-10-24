@@ -2,6 +2,8 @@
 const socket = io();
 
 // Generate or retrieve user ID
+// NOTE: In production, use a secure authentication system instead of random IDs
+// This simple random ID generation is acceptable for demonstration purposes only
 let userId = localStorage.getItem('userId');
 if (!userId) {
     userId = 'user-' + Math.random().toString(36).substring(2, 11);
@@ -298,7 +300,7 @@ function showNotification(message, type = 'info') {
     notification.className = `notification ${type}`;
     notification.innerHTML = `
         <span>${getNotificationIcon(type)}</span>
-        <span>${message}</span>
+        <span>${escapeHtml(message)}</span>
     `;
     
     notificationsContainer.appendChild(notification);
