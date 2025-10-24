@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time E-Commerce App</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🛒 Real-Time E-Commerce</h1>
+            <div class="header-right">
+                <span class="status-indicator">
+                    <span class="status-dot" id="connectionStatus"></span>
+                    <span id="statusText">Connecting...</span>
+                </span>
+                <button class="cart-btn" onclick="toggleCart()">
+                    🛒 Cart (<span id="cartCount">0</span>)
+                </button>
+            </div>
+        </header>
+
+        <div class="notifications" id="notifications"></div>
+
+        <main>
+            <div class="products-section">
+                <h2>Products <span class="live-badge">🔴 LIVE</span></h2>
+                <div class="products-grid" id="productsGrid">
+                    <!-- Products will be loaded here -->
+                </div>
+            </div>
+
+            <aside class="sidebar" id="cartSidebar">
+                <div class="cart-header">
+                    <h2>Shopping Cart</h2>
+                    <button class="close-btn" onclick="toggleCart()">✕</button>
+                </div>
+                <div class="cart-items" id="cartItems">
+                    <p class="empty-cart">Your cart is empty</p>
+                </div>
+                <div class="cart-footer">
+                    <div class="cart-total">
+                        <span>Total:</span>
+                        <span id="cartTotal">$0.00</span>
+                    </div>
+                    <button class="checkout-btn" onclick="checkout()" id="checkoutBtn" disabled>
+                        Checkout
+                    </button>
+                </div>
+            </aside>
+        </main>
+
+        <section class="orders-section" id="ordersSection">
+            <h2>Your Orders <span class="live-badge">🔴 LIVE</span></h2>
+            <div class="orders-list" id="ordersList">
+                <p class="no-orders">No orders yet</p>
+            </div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
