@@ -4,7 +4,7 @@ const socket = io();
 // Generate or retrieve user ID
 let userId = localStorage.getItem('userId');
 if (!userId) {
-    userId = 'user-' + Math.random().toString(36).substr(2, 9);
+    userId = 'user-' + Math.random().toString(36).substring(2, 11);
     localStorage.setItem('userId', userId);
 }
 
@@ -12,6 +12,18 @@ if (!userId) {
 let cart = [];
 let products = [];
 let orders = [];
+
+// Utility function to escape HTML and prevent XSS
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+}
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
@@ -106,10 +118,12 @@ function renderProducts() {
 
     grid.innerHTML = products.map(product => {
         const stockStatus = getStockStatus(product.stock);
+        const safeName = escapeHtml(product.name);
+        const safeCategory = escapeHtml(product.category);
         return `
             <div class="product-card">
-                <span class="product-category">${product.category}</span>
-                <h3>${product.name}</h3>
+                <span class="product-category">${safeCategory}</span>
+                <h3>${safeName}</h3>
                 <div class="product-price">$${product.price.toFixed(2)}</div>
                 <div class="product-stock ${stockStatus.class}">
                     ${stockStatus.text}
@@ -193,7 +207,7 @@ function updateCartDisplay() {
         cartItems.innerHTML = cart.map(item => `
             <div class="cart-item">
                 <div class="cart-item-info">
-                    <div class="cart-item-name">${item.name}</div>
+                    <div class="cart-item-name">${escapeHtml(item.name)}</div>
                     <div class="cart-item-details">
                         Qty: ${item.quantity} × $${item.price.toFixed(2)}
                     </div>
@@ -253,13 +267,13 @@ function renderOrders() {
     ordersList.innerHTML = orders.map(order => `
         <div class="order-card">
             <div class="order-header">
-                <span class="order-id">Order #${order.id.substring(0, 8)}</span>
-                <span class="order-status ${order.status}">${order.status.toUpperCase()}</span>
+                <span class="order-id">Order #${escapeHtml(order.id.substring(0, 8))}</span>
+                <span class="order-status ${order.status}">${escapeHtml(order.status.toUpperCase())}</span>
             </div>
             <div class="order-items">
                 ${order.items.map(item => `
                     <div class="order-item">
-                        <span>${item.name} × ${item.quantity}</span>
+                        <span>${escapeHtml(item.name)} × ${item.quantity}</span>
                         <span>$${(item.price * item.quantity).toFixed(2)}</span>
                     </div>
                 `).join('')}

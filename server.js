@@ -8,7 +8,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: "*",
+    origin: process.env.ALLOWED_ORIGINS || "http://localhost:3000",
     methods: ["GET", "POST"]
   }
 });
@@ -47,7 +47,26 @@ io.on('connection', (socket) => {
 
   // Handle cart updates
   socket.on('add-to-cart', (data) => {
+    // Input validation
+    if (!data || !data.userId || !data.productId || typeof data.quantity !== 'number') {
+      socket.emit('notification', {
+        type: 'error',
+        message: 'Invalid request data'
+      });
+      return;
+    }
+    
     const { userId, productId, quantity } = data;
+    
+    // Validate quantity
+    if (quantity <= 0 || !Number.isInteger(quantity)) {
+      socket.emit('notification', {
+        type: 'error',
+        message: 'Invalid quantity'
+      });
+      return;
+    }
+    
     const product = products.find(p => p.id === productId);
     
     if (product && product.stock >= quantity) {
@@ -78,20 +97,38 @@ io.on('connection', (socket) => {
 
   // Handle order placement
   socket.on('place-order', (data) => {
+    // Input validation
+    if (!data || !data.userId || !Array.isArray(data.cartItems) || data.cartItems.length === 0) {
+      socket.emit('notification', {
+        type: 'error',
+        message: 'Invalid order data'
+      });
+      return;
+    }
+    
     const { userId, cartItems } = data;
     const orderId = uuidv4();
     
-    // Validate stock and create order
+    // Validate stock and create order (atomic operation simulation)
     let isValid = true;
     const orderItems = [];
     
     for (const item of cartItems) {
+      if (!item.productId || typeof item.quantity !== 'number' || item.quantity <= 0) {
+        isValid = false;
+        socket.emit('notification', {
+          type: 'error',
+          message: 'Invalid item in cart'
+        });
+        break;
+      }
+      
       const product = products.find(p => p.id === item.productId);
       if (!product || product.stock < item.quantity) {
         isValid = false;
         socket.emit('notification', {
           type: 'error',
-          message: `Insufficient stock for ${item.name}`
+          message: `Insufficient stock for ${item.name || 'product'}`
         });
         break;
       }
@@ -104,7 +141,7 @@ io.on('connection', (socket) => {
     }
     
     if (isValid) {
-      // Update stock
+      // Update stock (in a real app, this would be a database transaction)
       for (const item of cartItems) {
         const product = products.find(p => p.id === item.productId);
         product.stock -= item.quantity;
@@ -201,22 +238,28 @@ app.get('/api/orders/:userId/:orderId', (req, res) => {
 });
 
 // Admin endpoint to update product stock (for demonstration)
+// NOTE: In production, this should require authentication and authorization
 app.post('/api/admin/products/:id/stock', (req, res) => {
   const { stock } = req.body;
   const product = products.find(p => p.id === req.params.id);
   
-  if (product && typeof stock === 'number') {
-    product.stock = stock;
-    // Broadcast stock update to all connected clients
-    io.emit('products-update', products);
-    io.emit('notification', {
-      type: 'info',
-      message: `Stock updated for ${product.name}`
-    });
-    res.json(product);
-  } else {
-    res.status(400).json({ error: 'Invalid request' });
+  // Input validation
+  if (!product) {
+    return res.status(404).json({ error: 'Product not found' });
   }
+  
+  if (typeof stock !== 'number' || stock < 0 || !Number.isInteger(stock)) {
+    return res.status(400).json({ error: 'Invalid stock value. Must be a non-negative integer.' });
+  }
+  
+  product.stock = stock;
+  // Broadcast stock update to all connected clients
+  io.emit('products-update', products);
+  io.emit('notification', {
+    type: 'info',
+    message: `Stock updated for ${product.name}`
+  });
+  res.json(product);
 });
 
 // Health check endpoint
