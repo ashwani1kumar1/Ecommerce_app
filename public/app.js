@@ -211,11 +211,11 @@ function updateCartDisplay() {
                 <div class="cart-item-info">
                     <div class="cart-item-name">${escapeHtml(item.name)}</div>
                     <div class="cart-item-details">
-                        Qty: ${item.quantity} × $${item.price.toFixed(2)}
+                        Qty: ${parseInt(item.quantity)} × $${parseFloat(item.price).toFixed(2)}
                     </div>
                 </div>
                 <div class="cart-item-price">
-                    $${(item.price * item.quantity).toFixed(2)}
+                    $${(parseFloat(item.price) * parseInt(item.quantity)).toFixed(2)}
                 </div>
             </div>
         `).join('');
